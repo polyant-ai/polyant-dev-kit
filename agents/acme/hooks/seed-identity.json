@@ -1,0 +1,10 @@
+{
+  "event": "conversation_start",
+  "actionType": "function",
+  "actionConfig": {
+    "functionName": "example:seedChannelIdentity"
+  },
+  "enabled": true,
+  "position": 0,
+  "timeoutMs": 5000
+}

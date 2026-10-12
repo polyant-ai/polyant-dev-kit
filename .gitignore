@@ -1,0 +1,20 @@
+node_modules/
+.env
+.env.local
+
+# Your own target list, copied from polyant.example.yaml. It names your hosts and
+# your workspaces, so it is yours and not the repo's — same reason as .env, even
+# though it holds no secret.
+polyant.yaml
+
+# A knowledge base pulled from an instance (GET …/knowledge/export) is a document
+# dump, not configuration: opt in per agent if you want it versioned.
+agents/*/knowledge/
+
+.DS_Store
+
+# git worktrees created for parallel work
+.worktrees/
+
+# Your private additions to tests/denylist.mjs: one regular expression per line.
+tests/denylist.local.txt

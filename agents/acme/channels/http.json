@@ -1,0 +1,10 @@
+{
+  "label": "Order orchestrator",
+  "fieldMapping": {
+    "customerPhone": "customer.phoneNumber",
+    "orderRef": "order.reference"
+  },
+  "outbound": {
+    "type": "sync-response"
+  }
+}

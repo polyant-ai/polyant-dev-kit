@@ -1,0 +1,96 @@
+import { z } from "zod";
+import { defineTool } from "@polyant-ai/plugin-sdk";
+
+/**
+ * Static schema. It may not read `ctx` — it is serialized to JSON Schema at
+ * module load. Strict-mode rules apply (see the tool-design skill):
+ *   no .optional()  -> use .nullable(), treat null as absent in execute
+ *   no .url()       -> validate the shape at runtime, return an error result
+ *   no .default()   -> apply the default in execute
+ */
+const parameters = z.object({
+  reference: z.string().min(1).describe("Identifier to look up in the external system"),
+  includeArchived: z
+    .boolean()
+    .nullable()
+    .describe("Include archived records. null means false"),
+});
+
+type Input = z.infer<typeof parameters>;
+
+export default defineTool({
+  name: "lookupReference",
+  description:
+    "Look up an identifier in the external system. Returns status 'found' with the " +
+    "record, 'not_found' if the identifier does not exist, or 'error' if the lookup " +
+    "could not be performed.",
+  category: "example",
+  requiredSecrets: [
+    { key: "example_api_key", type: "text", label: "Example API key" },
+    // sensitive:false so the admin panel shows it in clear — it is config, not a credential
+    { key: "example_base_url", type: "text", sensitive: false, label: "Example base URL" },
+  ],
+  parameters,
+  execute: async (input: Input, ctx) => {
+    const startedAt = Date.now();
+
+    // ctx.secrets is scoped to the keys declared above. An undeclared key is absent.
+    const apiKey = ctx.secrets?.example_api_key;
+    const baseUrl = ctx.secrets?.example_base_url;
+
+    // Errors are returned as DATA, never thrown. A throw takes away the model's
+    // ability to decide whether to retry, ask the user, or degrade.
+    if (!apiKey || !baseUrl) {
+      return { status: "error", message: "example_api_key or example_base_url is not configured" };
+    }
+    if (!baseUrl.startsWith("https://")) {
+      return { status: "error", message: "example_base_url must start with https://" };
+    }
+
+    const includeArchived = input.includeArchived ?? false;
+    const url = `${baseUrl}/records/${encodeURIComponent(input.reference)}?archived=${includeArchived}`;
+
+    try {
+      const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+
+      if (response.status === 404) {
+        // Audit the outcome, never the payload: a record can carry PII.
+        ctx.audit.log({
+          action: "lookupReference",
+          success: true,
+          output: "not_found",
+          durationMs: Date.now() - startedAt,
+        });
+        return { status: "not_found" };
+      }
+
+      if (!response.ok) {
+        ctx.audit.log({
+          action: "lookupReference",
+          success: false,
+          error: `http_${response.status}`,
+          durationMs: Date.now() - startedAt,
+        });
+        return { status: "error", message: `The external system responded ${response.status}` };
+      }
+
+      const record = (await response.json()) as Record<string, unknown>;
+      ctx.audit.log({
+        action: "lookupReference",
+        success: true,
+        output: "found",
+        durationMs: Date.now() - startedAt,
+      });
+      return { status: "found", record };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      ctx.audit.log({
+        action: "lookupReference",
+        success: false,
+        error: message,
+        durationMs: Date.now() - startedAt,
+      });
+      return { status: "error", message: `The external system is unreachable: ${message}` };
+    }
+  },
+});

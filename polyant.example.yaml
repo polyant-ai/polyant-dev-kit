@@ -1,0 +1,54 @@
+# Copy to polyant.yaml (gitignored) and edit. The copy is yours: it names your
+# hosts, your organization and your workspaces, so it does not belong in version
+# control any more than .env does.
+#
+# It holds no secrets even so. `keyEnv` names an ENVIRONMENT VARIABLE — never put a
+# token here. A literal `key:` is rejected by the tooling.
+#
+# That variable may hold either credential the engine accepts on X-Polyant-Key
+# (the second only on Polyant Enterprise):
+#   pk_…   a management key — a service scoped to one organization, with its own
+#          permission set, which outlives whoever created it. Use this for anything
+#          unattended: a pipeline authenticated as a person breaks, or keeps running
+#          under a closed account, the day they are offboarded.
+#   pat_…  a personal API token — authenticates YOU, reading your live role bindings,
+#          and dies with your access. For your own workstation, and restrictable to
+#          less than you can do. It is refused on the credential-management routes
+#          and on the whole platform-admin tier.
+
+default: staging
+defaultContext: engineering
+
+targets:
+  staging:
+    baseUrl: https://staging.example.polyant.ai
+    keyEnv: POLYANT_KEY_STAGING
+
+  prod:
+    baseUrl: https://example.polyant.ai
+    keyEnv: POLYANT_KEY_PROD
+    # Gates every destructive operation behind an explicit confirmation, and makes
+    # --yes mandatory on any write.
+    prod: true
+
+# A context is a non-secret shortcut for a target, an organization and a workspace.
+# Declare one per environment: a write REQUIRES an organization and a workspace, and
+# the tooling never guesses which workspace a change lands in. `defaultContext`
+# above selects one when --context is absent; --target, --org and --workspace each
+# override the selected context's corresponding value.
+#
+# Both `org` and `workspace` are SLUGS, exactly as `api GET /api/me` reports them —
+# no internal id ever crosses the boundary. Ask the instance rather than guessing:
+#
+#     npm run polyant -- api GET /api/me
+#
+contexts:
+  engineering:
+    target: staging
+    org: example
+    workspace: platform
+
+  production:
+    target: prod
+    org: example
+    workspace: platform

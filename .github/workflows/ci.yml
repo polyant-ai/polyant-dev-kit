@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      # npm records a GitHub git dependency as git+ssh in the lockfile, and CI has
+      # no SSH key. Rewriting to https fetches the public repository anonymously.
+      - run: git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - run: npm ci
+      - run: npm test
