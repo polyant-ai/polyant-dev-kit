@@ -206,6 +206,14 @@ optional `displayName` and `description` for how the panel presents it, and
 `oauthProviders` (below). Every tool loads as `<namespace>:<name>`. Two plugins
 resolving to the same final name fail the boot loudly.
 
+`displayName` and `description` are read by people, so give each one text per
+canonical BCP 47 tag, at least `en-US`:
+`"description": { "en-US": "Order status and returns.", "it-IT": "Stato degli ordini e resi." }`.
+The panel shows the reader's tag, else the same language, else English. A plain
+string still works for every language. A locale map needs `"engine": ">=1.3.0"`:
+an older engine rejects the manifest and skips the plugin. Tool and hook
+`description`s are read by the model and stay one string.
+
 An image-baked plugin may add `system`, read at **build time** and never at runtime:
 
 ```json
