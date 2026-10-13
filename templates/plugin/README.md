@@ -10,7 +10,8 @@ A minimal plugin: one tool, one hook, both tested.
     npm test
 
 Then edit `plugin.json` — `name` and `namespace` decide how your tools are
-addressed (`<namespace>:<toolName>`).
+addressed (`<namespace>:<toolName>`); `displayName` and `description` are how the
+panel presents the plugin, one text per locale (`en-US`, `it-IT`).
 
 ## Load it into an agent
 

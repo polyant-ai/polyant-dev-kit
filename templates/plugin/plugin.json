@@ -1,8 +1,16 @@
 {
   "name": "example-plugin",
   "version": "0.1.0",
-  "engine": ">=0.1.0",
+  "engine": ">=1.3.0",
   "toolsDir": "tools",
   "hooksDir": "hooks",
-  "namespace": "example"
+  "namespace": "example",
+  "displayName": {
+    "en-US": "Example plugin",
+    "it-IT": "Plugin di esempio"
+  },
+  "description": {
+    "en-US": "Looks up a reference and shows a hook at work.",
+    "it-IT": "Cerca un riferimento e mostra un hook in azione."
+  }
 }
