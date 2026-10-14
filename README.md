@@ -45,8 +45,8 @@ management API, and reports results with stable exit codes. It is deliberately
 thin: the engine owns the request schemas, so the CLI does not duplicate them.
 
 `polyant-cli` is installed from its GitHub repository, at a release tag. This
-workspace pins it as a dev dependency at `v0.9.0`, the release for Polyant 1.2.0 and
-Polyant Enterprise 1.2.0, so `npm install` fetches it. Its
+workspace pins it as a dev dependency at `v0.9.0`, the release for Polyant 1.3.0 and
+Polyant Enterprise 1.3.0, so `npm install` fetches it. Its
 version should follow the API version of the instance you talk to; to move it,
 re-pin the tag:
 
