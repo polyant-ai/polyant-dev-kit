@@ -16,8 +16,13 @@ resolve their own copy of the SDK, of `zod`, and of `ai` without breaking.
 
 ### Tools
 
-`export default defineTool({ name, description, category?, requiredEnv?,
+`export default defineTool({ name, description, summary?, category?, requiredEnv?,
 requiredSecrets?, inputExamples?, harness?, parameters, execute })`.
+
+- `description`, `parameters` and `inputExamples` are read by the **model**: one
+  English string, never localized. `summary` and the `label`/`description` of each
+  `requiredSecrets` field are read by **people** in the admin panel and the
+  marketplace: see "Text people read" below.
 
 - `parameters` is a **static** Zod schema — it may not read `ctx`.
 - `execute(input, ctx)` holds the business logic.
@@ -63,8 +68,9 @@ events — `conversation_start`, `message_received`, `response_generated`,
 `response_sent` — via the agent's configuration. Unlike a tool, a hook is
 never LLM-invoked and never appears in the tool catalog.
 
-`export default defineHook({ name, description, requiredSecrets?,
-mutatesResponse?, handler })`.
+`export default defineHook({ name, description, summary?, requiredSecrets?,
+mutatesResponse?, handler })`. `summary` is the sentence people read about the hook,
+one text per locale; without it the panel shows `description`.
 
 **A hook does not declare its own event.** There is no `event` field in the spec:
 the event→function binding lives in the agent's configuration. Your handler reads
@@ -117,9 +123,14 @@ import { z } from "zod";
 
 export default defineTool({
   name: "myTool",
-  description: "…",
-  category: "…",
-  requiredSecrets: ["some_api_key"],
+  description: "…",                         // for the model: one English string
+  summary: { "en-US": "Searches the catalogue.", "it-IT": "Cerca nel catalogo." },
+  category: "data",                          // an id the panel names, not text
+  requiredSecrets: [{
+    key: "some_api_key", type: "text",
+    label: { "en-US": "Some API key", "it-IT": "Chiave API di Some" },
+    description: { "en-US": "From Settings → API.", "it-IT": "Da Impostazioni → API." },
+  }],
   parameters: z.object({
     query: z.string(),
     limit: z.number().nullable(),
@@ -142,6 +153,7 @@ import { defineHook } from "@polyant-ai/plugin-sdk";
 export default defineHook({
   name: "myHook",
   description: "…",
+  summary: { "en-US": "Replays corrupted replies.", "it-IT": "Ripete le risposte corrotte." },
   mutatesResponse: true,
   handler: async (ctx) => {
     if (ctx.event !== "response_generated") return; // observe-only elsewhere
@@ -214,6 +226,28 @@ string still works for every language. A locale map needs `"engine": ">=1.3.0"`:
 an older engine rejects the manifest and skips the plugin. Tool and hook
 `description`s are read by the model and stay one string.
 
+### Text people read
+
+Every text a person reads is a `LocalizedText`: one string per canonical BCP 47 tag
+(`en-US`, `it-IT`, `pt-BR`), or a plain string that stands for every locale. Polyant
+and the marketplace show the reader's tag, else the same language, else English, else
+the first tag alphabetically, so always write `en-US` and, for Exelab plugins, `it-IT`.
+
+| Where | Field | Shown in |
+|-------|-------|----------|
+| `plugin.json` | `displayName`, `description` (and the marketplace's `longDescription`, `category`) | the agent's Tools section, the tool picker, the marketplace card |
+| `defineTool` / `defineHook` | `summary` | the tool list, the picker, the hook panel, the marketplace under each tool |
+| `requiredSecrets` | `label`, `description` | the tool's panel, the "missing parameter" warning, the marketplace's "Requires" line |
+
+Without a `summary` the panel and the marketplace show the first line of the
+`description`, which is English text written for the model: write the summary. A
+tool's `category` is an id (`crm`, `email`, `calendar`, `files`, `support`,
+`productivity`, `data`, `marketing`, `ecommerce`, `payments`, `hr`, …) that the panel
+names in every locale; reuse one it knows. `select` `choices` are stored values shown
+as written. `defineTool`, `defineHook` and `normalizeRequiredSecrets` throw at load on
+an empty text or a non-canonical tag, so your own tests catch a typo. All of this needs
+SDK `v1.10.0` and `"engine": ">=1.3.0"`.
+
 An image-baked plugin may add `system`, read at **build time** and never at runtime:
 
 ```json
@@ -247,10 +281,10 @@ but a prompt or a skill that names the old flat name now names nothing: search t
 when you upgrade.
 
 Your plugin references `@polyant-ai/plugin-sdk` as a git dependency **pinned to a
-tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.9.0`), not a
+tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.10.0`), not a
 branch — so an SDK release never silently changes your plugin's behaviour
 underneath you. Pin to the tag the target engine itself depends on — engine 1.2.0
-depends on `v1.9.0` — because an SDK newer than the engine can carry fields the
+depends on `v1.9.0`, engine 1.3.0 on `v1.10.0` — because an SDK newer than the engine can carry fields the
 engine does not read yet.
 
 ### Being on disk is not being available — on Enterprise

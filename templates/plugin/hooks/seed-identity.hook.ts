@@ -13,6 +13,10 @@ export default defineHook({
   description:
     "Copies the trusted channel identity into conversation state at the start of a " +
     "conversation, so tools can read it instead of trusting a model-supplied argument.",
+  summary: {
+    "en-US": "Remembers who is writing at the start of each conversation.",
+    "it-IT": "All'inizio di ogni conversazione memorizza chi sta scrivendo.",
+  },
   handler: async (ctx) => {
     if (ctx.event !== "conversation_start") return;
 
