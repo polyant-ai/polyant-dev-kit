@@ -11,7 +11,10 @@ A minimal plugin: one tool, one hook, both tested.
 
 Then edit `plugin.json` — `name` and `namespace` decide how your tools are
 addressed (`<namespace>:<toolName>`); `displayName` and `description` are how the
-panel presents the plugin, one text per locale (`en-US`, `it-IT`).
+panel presents the plugin, one text per locale (`en-US`, `it-IT`). Inside the code
+the same split holds: a tool's `description` is what the model reads and stays one
+English string, while its `summary` and the `label` and `description` of each
+field it asks for are what people read, one text per locale.
 
 ## Load it into an agent
 
