@@ -57,6 +57,18 @@ requiredSecrets?, inputExamples?, harness?, parameters, execute })`.
   is a round trip to the engine. Anything that must outlive the turn belongs in durable
   storage. It needs SDK `v1.9.0`, and it is the only `ctx` member the type marks as
   always present, so a fake context in a test has to provide it.
+- `ctx.ai.chat({ system, messages, tier })` asks a model for a short answer through
+  the engine's AI gateway, as a hook can. `tier` is `fast`, `standard` or `heavy`:
+  the tool picks the tier and the engine picks the model on the agent's own provider
+  connection, so a tool never names a provider or a model. The call is logged and
+  priced like the turn's own calls and counts towards the spend cap. It needs SDK
+  `v1.11.0` and an engine from 1.3.4; on an older engine `ctx.ai` is `undefined`.
+  A plugin that must also run there keeps a fallback: `if (!ctx.ai)` build a client
+  from `ctx.apiKeys` and `ctx.provider`, or return an `error` result, instead of
+  assuming the property exists.
+- `ctx.abortSignal` is aborted when the turn is cancelled or the tool's deadline
+  passes. Pass it to long work (`fetch(url, { signal: ctx.abortSignal })`) so the
+  work stops when nobody waits for it. Optional too, and absent on an older engine.
 - The rest of `ctx` — `instanceId`, `audit`, `conversationId?`, `attachments?`,
   `apiKeys?`, `provider?` — is there too. Read the SDK's context type rather than
   this list when you need one of them.
@@ -281,11 +293,11 @@ but a prompt or a skill that names the old flat name now names nothing: search t
 when you upgrade.
 
 Your plugin references `@polyant-ai/plugin-sdk` as a git dependency **pinned to a
-tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.10.0`), not a
+tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.11.0`), not a
 branch — so an SDK release never silently changes your plugin's behaviour
 underneath you. Pin to the tag the target engine itself depends on — engine 1.2.0
-depends on `v1.9.0`, engine 1.3.0 on `v1.10.0` — because an SDK newer than the engine can carry fields the
-engine does not read yet.
+depends on `v1.9.0`, engine 1.3.0 on `v1.10.0`, engine 1.3.4 on `v1.11.0` — because an SDK newer than the
+engine can carry fields the engine does not read yet.
 
 ### Being on disk is not being available — on Enterprise
 

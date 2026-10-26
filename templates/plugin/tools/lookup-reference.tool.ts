@@ -71,7 +71,12 @@ export default defineTool({
     const url = `${baseUrl}/records/${encodeURIComponent(input.reference)}?archived=${includeArchived}`;
 
     try {
-      const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+      // ctx.abortSignal stops the call when nobody waits for it any more. It is
+      // absent on engines before 1.3.4, and fetch ignores an undefined signal.
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: ctx.abortSignal,
+      });
 
       if (response.status === 404) {
         // Audit the outcome, never the payload: a record can carry PII.
