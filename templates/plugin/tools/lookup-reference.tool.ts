@@ -24,11 +24,31 @@ export default defineTool({
     "Look up an identifier in the external system. Returns status 'found' with the " +
     "record, 'not_found' if the identifier does not exist, or 'error' if the lookup " +
     "could not be performed.",
-  category: "example",
+  // `description` above is for the model and stays one English string. `summary`
+  // and the field labels are for the people configuring the agent: one text per locale.
+  summary: {
+    "en-US": "Looks up an identifier in the external system.",
+    "it-IT": "Cerca un identificativo nel sistema esterno.",
+  },
+  // An id the panel names in every locale (crm, email, files, data, …), not text.
+  category: "data",
   requiredSecrets: [
-    { key: "example_api_key", type: "text", label: "Example API key" },
+    {
+      key: "example_api_key",
+      type: "text",
+      label: { "en-US": "Example API key", "it-IT": "Chiave API di Example" },
+      description: {
+        "en-US": "Key of the Example account the lookups run as.",
+        "it-IT": "Chiave dell'account Example con cui vengono fatte le ricerche.",
+      },
+    },
     // sensitive:false so the admin panel shows it in clear — it is config, not a credential
-    { key: "example_base_url", type: "text", sensitive: false, label: "Example base URL" },
+    {
+      key: "example_base_url",
+      type: "text",
+      sensitive: false,
+      label: { "en-US": "Example base URL", "it-IT": "URL base di Example" },
+    },
   ],
   parameters,
   execute: async (input: Input, ctx) => {
@@ -51,7 +71,12 @@ export default defineTool({
     const url = `${baseUrl}/records/${encodeURIComponent(input.reference)}?archived=${includeArchived}`;
 
     try {
-      const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+      // ctx.abortSignal stops the call when nobody waits for it any more. It is
+      // absent on engines before 1.3.4, and fetch ignores an undefined signal.
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: ctx.abortSignal,
+      });
 
       if (response.status === 404) {
         // Audit the outcome, never the payload: a record can carry PII.

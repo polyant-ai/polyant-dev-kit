@@ -223,7 +223,7 @@ untouched.
 
 ## A provider credential is a connection, bound per role — **Enterprise**
 
-On Polyant Enterprise 1.2.0 a model provider's key is not an agent secret. It lives
+On Polyant Enterprise 1.3.0 a model provider's key is not an agent secret. It lives
 in a **connection** — a named credential the organization lends to workspaces, or
 one private to the agent — and each use of it is a **role** bound to exactly one
 connection: an agent's `chat`, `embedding` and `stt` roles, the voice roles, and at

@@ -16,8 +16,13 @@ resolve their own copy of the SDK, of `zod`, and of `ai` without breaking.
 
 ### Tools
 
-`export default defineTool({ name, description, category?, requiredEnv?,
+`export default defineTool({ name, description, summary?, category?, requiredEnv?,
 requiredSecrets?, inputExamples?, harness?, parameters, execute })`.
+
+- `description`, `parameters` and `inputExamples` are read by the **model**: one
+  English string, never localized. `summary` and the `label`/`description` of each
+  `requiredSecrets` field are read by **people** in the admin panel and the
+  marketplace: see "Text people read" below.
 
 - `parameters` is a **static** Zod schema — it may not read `ctx`.
 - `execute(input, ctx)` holds the business logic.
@@ -52,6 +57,18 @@ requiredSecrets?, inputExamples?, harness?, parameters, execute })`.
   is a round trip to the engine. Anything that must outlive the turn belongs in durable
   storage. It needs SDK `v1.9.0`, and it is the only `ctx` member the type marks as
   always present, so a fake context in a test has to provide it.
+- `ctx.ai.chat({ system, messages, tier })` asks a model for a short answer through
+  the engine's AI gateway, as a hook can. `tier` is `fast`, `standard` or `heavy`:
+  the tool picks the tier and the engine picks the model on the agent's own provider
+  connection, so a tool never names a provider or a model. The call is logged and
+  priced like the turn's own calls and counts towards the spend cap. It needs SDK
+  `v1.11.0` and an engine from 1.3.4; on an older engine `ctx.ai` is `undefined`.
+  A plugin that must also run there keeps a fallback: `if (!ctx.ai)` build a client
+  from `ctx.apiKeys` and `ctx.provider`, or return an `error` result, instead of
+  assuming the property exists.
+- `ctx.abortSignal` is aborted when the turn is cancelled or the tool's deadline
+  passes. Pass it to long work (`fetch(url, { signal: ctx.abortSignal })`) so the
+  work stops when nobody waits for it. Optional too, and absent on an older engine.
 - The rest of `ctx` — `instanceId`, `audit`, `conversationId?`, `attachments?`,
   `apiKeys?`, `provider?` — is there too. Read the SDK's context type rather than
   this list when you need one of them.
@@ -63,8 +80,9 @@ events — `conversation_start`, `message_received`, `response_generated`,
 `response_sent` — via the agent's configuration. Unlike a tool, a hook is
 never LLM-invoked and never appears in the tool catalog.
 
-`export default defineHook({ name, description, requiredSecrets?,
-mutatesResponse?, handler })`.
+`export default defineHook({ name, description, summary?, requiredSecrets?,
+mutatesResponse?, handler })`. `summary` is the sentence people read about the hook,
+one text per locale; without it the panel shows `description`.
 
 **A hook does not declare its own event.** There is no `event` field in the spec:
 the event→function binding lives in the agent's configuration. Your handler reads
@@ -117,9 +135,14 @@ import { z } from "zod";
 
 export default defineTool({
   name: "myTool",
-  description: "…",
-  category: "…",
-  requiredSecrets: ["some_api_key"],
+  description: "…",                         // for the model: one English string
+  summary: { "en-US": "Searches the catalogue.", "it-IT": "Cerca nel catalogo." },
+  category: "data",                          // an id the panel names, not text
+  requiredSecrets: [{
+    key: "some_api_key", type: "text",
+    label: { "en-US": "Some API key", "it-IT": "Chiave API di Some" },
+    description: { "en-US": "From Settings → API.", "it-IT": "Da Impostazioni → API." },
+  }],
   parameters: z.object({
     query: z.string(),
     limit: z.number().nullable(),
@@ -142,6 +165,7 @@ import { defineHook } from "@polyant-ai/plugin-sdk";
 export default defineHook({
   name: "myHook",
   description: "…",
+  summary: { "en-US": "Replays corrupted replies.", "it-IT": "Ripete le risposte corrotte." },
   mutatesResponse: true,
   handler: async (ctx) => {
     if (ctx.event !== "response_generated") return; // observe-only elsewhere
@@ -206,6 +230,36 @@ optional `displayName` and `description` for how the panel presents it, and
 `oauthProviders` (below). Every tool loads as `<namespace>:<name>`. Two plugins
 resolving to the same final name fail the boot loudly.
 
+`displayName` and `description` are read by people, so give each one text per
+canonical BCP 47 tag, at least `en-US`:
+`"description": { "en-US": "Order status and returns.", "it-IT": "Stato degli ordini e resi." }`.
+The panel shows the reader's tag, else the same language, else English. A plain
+string still works for every language. A locale map needs `"engine": ">=1.3.0"`:
+an older engine rejects the manifest and skips the plugin. Tool and hook
+`description`s are read by the model and stay one string.
+
+### Text people read
+
+Every text a person reads is a `LocalizedText`: one string per canonical BCP 47 tag
+(`en-US`, `it-IT`, `pt-BR`), or a plain string that stands for every locale. Polyant
+and the marketplace show the reader's tag, else the same language, else English, else
+the first tag alphabetically, so always write `en-US` and, for Exelab plugins, `it-IT`.
+
+| Where | Field | Shown in |
+|-------|-------|----------|
+| `plugin.json` | `displayName`, `description` (and the marketplace's `longDescription`, `category`) | the agent's Tools section, the tool picker, the marketplace card |
+| `defineTool` / `defineHook` | `summary` | the tool list, the picker, the hook panel, the marketplace under each tool |
+| `requiredSecrets` | `label`, `description` | the tool's panel, the "missing parameter" warning, the marketplace's "Requires" line |
+
+Without a `summary` the panel and the marketplace show the first line of the
+`description`, which is English text written for the model: write the summary. A
+tool's `category` is an id (`crm`, `email`, `calendar`, `files`, `support`,
+`productivity`, `data`, `marketing`, `ecommerce`, `payments`, `hr`, …) that the panel
+names in every locale; reuse one it knows. `select` `choices` are stored values shown
+as written. `defineTool`, `defineHook` and `normalizeRequiredSecrets` throw at load on
+an empty text or a non-canonical tag, so your own tests catch a typo. All of this needs
+SDK `v1.10.0` and `"engine": ">=1.3.0"`.
+
 An image-baked plugin may add `system`, read at **build time** and never at runtime:
 
 ```json
@@ -239,11 +293,14 @@ but a prompt or a skill that names the old flat name now names nothing: search t
 when you upgrade.
 
 Your plugin references `@polyant-ai/plugin-sdk` as a git dependency **pinned to a
-tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.9.0`), not a
+tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.12.0`), not a
 branch — so an SDK release never silently changes your plugin's behaviour
 underneath you. Pin to the tag the target engine itself depends on — engine 1.2.0
-depends on `v1.9.0` — because an SDK newer than the engine can carry fields the
-engine does not read yet.
+depends on `v1.9.0`, engine 1.3.0 on `v1.10.0`, engine 1.3.4 on `v1.11.0`, engine 1.3.5 on `v1.12.0` — because an SDK newer than the
+engine can carry fields the engine does not read yet. `v1.12.0` is the exception: it
+adds no field, only lets you write `parameters` in Zod 4 (Zod 3 still works), and the
+engine receives the same JSON Schema as from `v1.11.0`, so it serves every engine that
+`v1.11.0` serves.
 
 ### Being on disk is not being available — on Enterprise
 

@@ -67,6 +67,17 @@ describe("lookupReference", () => {
     expect(result).toEqual({ status: "found", record: { id: "abc" } });
   });
 
+  it("passes the context's abort signal to the request", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ status: 404, ok: false });
+    vi.stubGlobal("fetch", fetchSpy);
+    const abortSignal = new AbortController().signal;
+    await tool.execute(input, {
+      ...context({ example_api_key: "k", example_base_url: "https://api.test" }),
+      abortSignal,
+    });
+    expect(fetchSpy.mock.calls[0]?.[1]).toMatchObject({ signal: abortSignal });
+  });
+
   it("never throws when the network fails", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
     const result = await tool.execute(

@@ -69,7 +69,7 @@ characters, and the value at most 8 KiB. The write needs `agent.secret:write`, w
 is Admin-grade — a Member-scoped key can neither set a secret nor read which keys
 exist.
 
-**The model provider's key is a secret on OSS only.** On Polyant Enterprise 1.2.0
+**The model provider's key is a secret on OSS only.** On Polyant Enterprise 1.3.0
 it lives in a connection that the agent's `chat` role is bound to (`agent
 provider-roles`, see the `cli-workflows` skill), and `agent secrets set` refuses it.
 
