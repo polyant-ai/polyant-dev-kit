@@ -11,6 +11,6 @@
   },
   "devDependencies": {
     "@polyant-ai/cli": "git+https://github.com/polyant-ai/polyant-cli.git#v0.9.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   }
 }
