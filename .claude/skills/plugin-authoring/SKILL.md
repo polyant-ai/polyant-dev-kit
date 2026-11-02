@@ -293,11 +293,14 @@ but a prompt or a skill that names the old flat name now names nothing: search t
 when you upgrade.
 
 Your plugin references `@polyant-ai/plugin-sdk` as a git dependency **pinned to a
-tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.11.0`), not a
+tag** (e.g. `git+https://github.com/polyant-ai/polyant-sdk.git#v1.12.0`), not a
 branch — so an SDK release never silently changes your plugin's behaviour
 underneath you. Pin to the tag the target engine itself depends on — engine 1.2.0
 depends on `v1.9.0`, engine 1.3.0 on `v1.10.0`, engine 1.3.4 on `v1.11.0` — because an SDK newer than the
-engine can carry fields the engine does not read yet.
+engine can carry fields the engine does not read yet. `v1.12.0` is the exception: it
+adds no field, only lets you write `parameters` in Zod 4 (Zod 3 still works), and the
+engine receives the same JSON Schema as from `v1.11.0`, so it serves every engine that
+`v1.11.0` serves.
 
 ### Being on disk is not being available — on Enterprise
 
