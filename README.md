@@ -45,13 +45,13 @@ management API, and reports results with stable exit codes. It is deliberately
 thin: the engine owns the request schemas, so the CLI does not duplicate them.
 
 `polyant-cli` is installed from its GitHub repository, at a release tag. This
-workspace pins it as a dev dependency at `v0.9.0`, the release for Polyant 1.3.0 and
-Polyant Enterprise 1.3.0, so `npm install` fetches it. Its
+workspace pins it as a dev dependency at `v0.9.1`, the release for Polyant 1.3.5 and
+Polyant Enterprise 1.3.5-ee, so `npm install` fetches it. Its
 version should follow the API version of the instance you talk to; to move it,
 re-pin the tag:
 
 ```bash
-npm i -D git+https://github.com/polyant-ai/polyant-cli.git#v0.9.0
+npm i -D git+https://github.com/polyant-ai/polyant-cli.git#v0.9.1
 npm run polyant -- --help
 ```
 
@@ -59,7 +59,7 @@ Run it through the npm script, not a global binary, so the pinned version is the
 one that executes. If you also want it on your `PATH` outside this workspace:
 
 ```bash
-npm install -g https://github.com/polyant-ai/polyant-cli/releases/download/v0.9.0/polyant-ai-cli-0.9.0.tgz
+npm install -g https://github.com/polyant-ai/polyant-cli/releases/download/v0.9.1/polyant-ai-cli-0.9.1.tgz
 ```
 
 Then point the workspace at your instance.
