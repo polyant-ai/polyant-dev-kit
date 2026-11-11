@@ -107,3 +107,17 @@ not one a command populates. Do not invent those verbs. For a whole-agent snapsh
 prompts, tools, channels, hooks and the non-sensitive settings, with credentials as
 key names only. Importing over an existing agent **replaces** those parts rather than
 merging them, so it is a restore, not a sync.
+
+## Working practice
+
+These lines are for changing this repository itself.
+
+- Inspect the skills, templates, tests and history before editing; follow the nearest pattern.
+- Make it work, then make it good: before asking for review, simplify — reuse what
+  exists, remove duplication and dead text, keep the diff small.
+- Verify with `npm test` (and `npm test` inside `templates/plugin/` when the template
+  changed); report what could not run.
+- Branch from `develop` as `feat/…`, `fix/…`, `feature/…`, `bugfix/…` or `hotfix/…`
+  (other names are rejected) and open the PR to `develop`; `main` and `develop` are
+  protected. Write the PR in English with `.github/PULL_REQUEST_TEMPLATE.md`.
+- Never merge, tag, publish or deploy unless explicitly asked.

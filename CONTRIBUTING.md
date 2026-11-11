@@ -30,17 +30,6 @@ plugin template under `templates/plugin/`.
    its place with the judgement those listings cannot carry. Mark anything that
    exists only on Polyant Enterprise as **Enterprise**.
 
-## Sign your work (DCO)
-
-This project uses the [Developer Certificate of Origin](https://developercertificate.org/)
-instead of a Contributor License Agreement. Every commit must carry a
-`Signed-off-by` line, which `git commit -s` adds from your `user.name` and
-`user.email`:
-
-    git commit -s -m "docs(skills): clarify when a tool should gate"
-
-If you forgot it on your last commit, amend it with `git commit --amend -s --no-edit`.
-
 ## Pull requests
 
 - Open the pull request against `develop`.
